@@ -1,6 +1,7 @@
 plugins {
     id("application")
     id("io.freefair.lombok") version "9.5.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.outlook.wn123o"

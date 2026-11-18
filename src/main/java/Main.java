@@ -3,6 +3,7 @@ import com.outlook.wn123o.mediadl.bean.Command;
 import com.outlook.wn123o.mediadl.bean.MediaSource;
 import com.outlook.wn123o.mediadl.bean.SearchResult;
 import com.outlook.wn123o.mediadl.interfaces.Extractor;
+import com.outlook.wn123o.mediadl.util.Settings;
 import de.vandermeer.asciitable.AsciiTable;
 
 import java.util.List;
@@ -28,6 +29,12 @@ public class Main {
                 case "show":
                     handleShowAction(command);
                     break;
+                case "download":
+                    handleDownloadAction(command);
+                    break;
+                case "set":
+                    handleSetAction(command);
+                    break;
                 case "exit":
                 case "q":
                 case "quit":
@@ -39,11 +46,32 @@ public class Main {
         }
     }
 
+    private static void handleSetAction(Command cmd) {
+        String args = cmd.getArgs();
+        String[] parts = args.split("=");
+        if (parts.length == 2) {
+            Settings.putString(parts[0], parts[1]);
+            System.out.println("OK.");
+        } else {
+            System.err.println("Invalid args! " + args);
+        }
+    }
+
+    private static void handleDownloadAction(Command cmd) {
+        String args = cmd.getArgs();
+        int n = Integer.parseInt(args);
+        SearchResult result = curResults.get(n - 1);
+        MediaSource source = curExecutor.extract(result);
+        if (source == null) return;
+        curExecutor.download(source);
+    }
+
     private static void handleShowAction(Command cmd) {
         String args = cmd.getArgs();
         int n = Integer.parseInt(args);
         SearchResult meta = curResults.get(n - 1);
         MediaSource source = curExecutor.extract(meta);
+        if (source == null) return;
         System.out.println("Title: " + source.getTitle() + " - " + source.getArtist());
         System.out.println("Album: " + source.getAlbum());
         System.out.println("Quality: " + source.getQuality());

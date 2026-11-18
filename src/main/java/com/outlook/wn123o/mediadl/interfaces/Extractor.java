@@ -8,6 +8,6 @@ import java.util.List;
 public interface Extractor {
     String getTag();
     List<SearchResult> search(String s);
-
-    MediaSource extract(SearchResult meta);
+    MediaSource extract(SearchResult result);
+    void download(MediaSource source);
 }

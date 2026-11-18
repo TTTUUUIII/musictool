@@ -5,10 +5,15 @@ import com.outlook.wn123o.mediadl.bean.MediaSource;
 import com.outlook.wn123o.mediadl.bean.SearchResult;
 import com.outlook.wn123o.mediadl.interfaces.Extractor;
 import com.outlook.wn123o.mediadl.util.JsonUtils;
-import lombok.Data;
+import com.outlook.wn123o.mediadl.util.Settings;
 import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,7 +23,9 @@ public class TwentyFourBitExtractor implements Extractor {
 
     private static final String BASE_URL = "https://www.24bit.net/";
     private static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36";
-    private final OkHttpClient httpClient = new OkHttpClient();
+    private final OkHttpClient httpClient = new OkHttpClient.Builder()
+//            .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10808)))
+            .build();
 
     @Override
     public String getTag() {
@@ -60,15 +67,60 @@ public class TwentyFourBitExtractor implements Extractor {
         Request request = new Request.Builder()
                 .url(url("music/a/" + metadata.getId()))
                 .header("User-Agent", UA)
+                .header("Origin", BASE_URL)
                 .build();
         try (Response response = httpClient.newCall(request).execute()){
+            String s = response.body().string();
             if (response.isSuccessful()) {
-                return parseAudioSource(response.body().string());
+                return parseAudioSource(s);
+            } else {
+                System.err.println(s);
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }
         return null;
+    }
+
+    @Override
+    public void download(@NotNull MediaSource source) {
+        ProcessBuilder builder = new ProcessBuilder();
+        ArrayList<String> command = new ArrayList<>();
+        command.add("ffmpeg");
+        command.add("-i");
+        command.add(source.getUrl());
+        command.add("-i");
+        command.add(source.getCoverUrl());
+        command.add("-map");
+        command.add("0:a");
+        command.add("-map");
+        command.add("1:v");
+        command.add("-disposition:v:0");
+        command.add("attached_pic");
+        command.add("-vf");
+        command.add("scale=600:600");
+        command.add("-c:v");
+        command.add("mjpeg");
+        if (source.getAlbum() != null) {
+            command.add("-metadata");
+            command.add(String.format("album=%s", source.getAlbum()));
+        }
+        command.add("-metadata");
+        command.add(String.format("title=%s", source.getTitle()));
+        command.add("-metadata");
+        command.add(String.format("artist=%s", source.getArtist()));
+        String fileName = String.format("%s - %s.flac", source.getArtist(), source.getTitle())
+                        .replaceAll("[\\\\/:*?\"<>|]", " ");
+        command.add(Paths.get(Settings.getString("download.path", ""), fileName).toString());
+        builder.command(command);
+        builder.inheritIO();
+        try {
+            Process process = builder.start();
+            process.waitFor();
+            process.destroy();
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private MediaSource parseAudioSource(String html) {
