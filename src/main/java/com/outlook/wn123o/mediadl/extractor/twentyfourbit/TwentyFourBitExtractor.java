@@ -10,9 +10,7 @@ import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URI;
+import java.net.*;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +21,6 @@ import java.util.stream.Collectors;
 public class TwentyFourBitExtractor implements Extractor {
 
     private static final String BASE_URL = "https://www.24bit.net/";
-    private static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36";
     private OkHttpClient httpClient;
 
     public TwentyFourBitExtractor() {
@@ -44,8 +41,6 @@ public class TwentyFourBitExtractor implements Extractor {
         Request request = new Request.Builder()
                 .url(url("api/player/searchOnlineMusicOne"))
                 .header("Content-Type", "application/json; charset=utf-8")
-                .header("Origin", BASE_URL)
-                .header("User-Agent", UA)
                 .post(requestBody)
                 .build();
         try (Response response = httpClient.newCall(request).execute()){
@@ -71,8 +66,6 @@ public class TwentyFourBitExtractor implements Extractor {
         }
         Request request = new Request.Builder()
                 .url(url("music/a/" + metadata.getId()))
-                .header("User-Agent", UA)
-                .header("Origin", BASE_URL)
                 .build();
         try (Response response = httpClient.newCall(request).execute()){
             String s = response.body().string();
@@ -141,6 +134,10 @@ public class TwentyFourBitExtractor implements Extractor {
             URI uri = URI.create(Settings.getString("proxy.http"));
             builder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(uri.getHost(), uri.getPort())));
         }
+//        CookieManager cookieManager = new CookieManager();
+//        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+//        builder.cookieJar(new JavaNetCookieJar(cookieManager));
+        builder.addInterceptor(new DefaultInterceptor(BASE_URL));
         httpClient = builder.build();
     }
 

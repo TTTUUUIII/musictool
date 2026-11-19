@@ -23,6 +23,7 @@ dependencies {
     implementation("de.vandermeer:asciitable:0.3.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.23.0")
     implementation("com.squareup.okhttp3:okhttp:5.5.0")
+    implementation("com.squareup.okhttp3:okhttp-java-net-cookiejar:5.4.0")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

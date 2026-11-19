@@ -6,6 +6,7 @@ import com.outlook.wn123o.mediadl.interfaces.Extractor;
 import com.outlook.wn123o.mediadl.util.Settings;
 import de.vandermeer.asciitable.AsciiTable;
 
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Scanner;
 
@@ -33,6 +34,7 @@ public class Main {
                     handleDownloadAction(command);
                     break;
                 case "set":
+                case "unset":
                     handleSetAction(command);
                     break;
                 case "exit":
@@ -48,14 +50,23 @@ public class Main {
 
     private static void handleSetAction(Command cmd) {
         String args = cmd.getArgs();
-        String[] parts = args.split("=");
-        if (parts.length == 2) {
-            Settings.putString(parts[0], parts[1]);
-            ExtractorManager.getInstance().getExtractors()
-                            .forEach(extractor -> extractor.onSettingChanged(parts[0]));
-            System.out.println("OK.");
+        if ("set".equals(cmd.getAction())) {
+            int idx = args.indexOf(" ");
+            if (idx != -1) {
+                String k = args.substring(0, idx);
+                String v = args.substring(idx + 1);
+                Settings.putString(k, v);
+                ExtractorManager.getInstance().getExtractors()
+                        .forEach(extractor -> extractor.onSettingChanged(k));
+                System.out.println("OK.");
+            } else {
+                System.err.println("Invalid args! " + args);
+            }
         } else {
-            System.err.println("Invalid args! " + args);
+            Settings.remove(cmd.getArgs());
+            ExtractorManager.getInstance().getExtractors()
+                    .forEach(extractor -> extractor.onSettingChanged(cmd.getArgs()));
+            System.out.println("OK.");
         }
     }
 
@@ -65,11 +76,17 @@ public class Main {
             return;
         }
         String args = cmd.getArgs();
-        int n = Integer.parseInt(args);
-        SearchResult result = curResults.get(n - 1);
-        MediaSource source = curExecutor.extract(result);
-        if (source == null) return;
-        curExecutor.download(source);
+        String[] parts = args.split(" ");
+        for (String part : parts) {
+            int n = Integer.parseInt(part);
+            SearchResult result = curResults.get(n - 1);
+            MediaSource source = curExecutor.extract(result);
+            if (source == null) {
+                System.out.printf("Extract \"%s - %s!%n\" failed!", result.getArtist(), result.getTitle());
+                continue;
+            }
+            curExecutor.download(source);
+        }
     }
 
     private static void handleShowAction(Command cmd) {
