@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +24,11 @@ public class TwentyFourBitExtractor implements Extractor {
 
     private static final String BASE_URL = "https://www.24bit.net/";
     private static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36";
-    private final OkHttpClient httpClient = new OkHttpClient.Builder()
-//            .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 10808)))
-            .build();
+    private OkHttpClient httpClient;
+
+    public TwentyFourBitExtractor() {
+        createHttpClient();
+    }
 
     @Override
     public String getTag() {
@@ -52,6 +55,8 @@ public class TwentyFourBitExtractor implements Extractor {
                     return data.getResult().stream().map(SearchResultExt::of)
                             .collect(Collectors.toList());
                 }
+            } else {
+                System.err.println(response.code() + "\n" + response.body().string());
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);
@@ -121,6 +126,22 @@ public class TwentyFourBitExtractor implements Extractor {
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void onSettingChanged(String k) {
+        if ("proxy.http".equals(k)) {
+            createHttpClient();
+        }
+    }
+
+    private void createHttpClient() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        if (Settings.getString("proxy.http") != null) {
+            URI uri = URI.create(Settings.getString("proxy.http"));
+            builder.proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(uri.getHost(), uri.getPort())));
+        }
+        httpClient = builder.build();
     }
 
     private MediaSource parseAudioSource(String html) {

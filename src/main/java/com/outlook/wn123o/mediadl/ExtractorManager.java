@@ -4,6 +4,7 @@ import com.outlook.wn123o.mediadl.extractor.twentyfourbit.TwentyFourBitExtractor
 import com.outlook.wn123o.mediadl.interfaces.Extractor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,6 +15,10 @@ public class ExtractorManager {
 
     public Extractor getExtractor(@NotNull String tag) {
         return extractors.get(tag);
+    }
+
+    public List<Extractor> getExtractors() {
+        return extractors.values().stream().toList();
     }
 
     private static final class InstanceHolder {

@@ -51,6 +51,8 @@ public class Main {
         String[] parts = args.split("=");
         if (parts.length == 2) {
             Settings.putString(parts[0], parts[1]);
+            ExtractorManager.getInstance().getExtractors()
+                            .forEach(extractor -> extractor.onSettingChanged(parts[0]));
             System.out.println("OK.");
         } else {
             System.err.println("Invalid args! " + args);
@@ -58,6 +60,10 @@ public class Main {
     }
 
     private static void handleDownloadAction(Command cmd) {
+        if (curExecutor == null) {
+            System.err.println("No extractor selected!");
+            return;
+        }
         String args = cmd.getArgs();
         int n = Integer.parseInt(args);
         SearchResult result = curResults.get(n - 1);
@@ -67,6 +73,10 @@ public class Main {
     }
 
     private static void handleShowAction(Command cmd) {
+        if (curExecutor == null) {
+            System.err.println("No extractor selected!");
+            return;
+        }
         String args = cmd.getArgs();
         int n = Integer.parseInt(args);
         SearchResult meta = curResults.get(n - 1);
@@ -82,6 +92,10 @@ public class Main {
     }
 
     private static void handleSearchAction(Command cmd) {
+        if (curExecutor == null) {
+            System.err.println("No extractor selected!");
+            return;
+        }
         String args = cmd.getArgs();
         curResults = curExecutor.search(args);
         AsciiTable at = new AsciiTable();

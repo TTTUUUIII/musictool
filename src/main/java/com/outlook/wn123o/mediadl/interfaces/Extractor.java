@@ -10,4 +10,6 @@ public interface Extractor {
     List<SearchResult> search(String s);
     MediaSource extract(SearchResult result);
     void download(MediaSource source);
+
+    void onSettingChanged(String k);
 }
